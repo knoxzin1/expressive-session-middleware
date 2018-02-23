@@ -3,10 +3,12 @@
 namespace DaMess\Http;
 
 use Aura\Session\Session;
+use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-final class SessionMiddleware
+final class SessionMiddleware implements MiddlewareInterface
 {
     const KEY = 'session';
 
@@ -25,11 +27,10 @@ final class SessionMiddleware
 
     /**
      * @param ServerRequestInterface $request
-     * @param ResponseInterface $response
-     * @param callable|null $next
+     * @param RequestHandlerInterface $handler
      * @return ResponseInterface
      */
-    public function __invoke(ServerRequestInterface $request, ResponseInterface $response, callable $next = null)
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         if (!$this->session->isStarted()) {
             $this->session->start();
@@ -37,10 +38,6 @@ final class SessionMiddleware
 
         $request = $request->withAttribute(self::KEY, $this->session);
 
-        if ($next) {
-            return $next($request, $response);
-        }
-
-        return $response;
+        return $handler->handle($request);
     }
 }
